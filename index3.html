@@ -1,0 +1,1047 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset='utf-8' />
+  <title>Add a third party vector tile source</title>
+  <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+  <script src='https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/js/bootstrap.min.js'></script>
+  <script src='https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.js'></script>
+  <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v0.51.0/mapbox-gl.js'></script>
+  <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v0.51.0/mapbox-gl.css' rel='stylesheet' />
+  <link href='https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css' rel='stylesheet' />
+  <script src='https://npmcdn.com/@turf/turf/turf.min.js'></script>
+  <!-- <script src='https://api.mapbox.com/mapbox.js/plugins/turf/v2.0.2/turf.min.js'></script> -->
+  <script src='mapbox-gl-draw.js'></script>
+  <link rel='stylesheet' href='https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v0.18.0/mapbox-gl-draw.css' type='text/css'/>
+  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.6.3/css/all.css" integrity="sha384-UHRtZLI+pbxtHCWp1t77Bi1L4ZtiqrqD80Kn4Z8NTSRyMA2Fd33n5dQ8lWUE00s/" crossorigin="anonymous">
+  <script src='https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v2.3.0/mapbox-gl-geocoder.min.js'></script>
+<link rel='stylesheet' href='geocoder.css' type='text/css' />
+  <script src='mapbox-gl-draw-rectangle-mode.min.js'></script>
+  <style>
+  body {
+  	margin: 0px;
+  	padding: 0px;
+  }
+  #basisOfRecord {
+  	position: absolute;
+  	z-index: 999999999;
+  }
+.mapboxgl-popup-content{
+    padding-top: 23px!important;
+  }
+  body {
+  	color: #404040;
+  	font: 400 15px/22px'Source Sans Pro', 'Helvetica Neue', Sans-serif;
+  	margin: 0;
+  	padding: 0;
+  	-webkit-font-smoothing: antialiased;
+  }
+  * {
+  	-webkit-box-sizing: border-box;
+  	-moz-box-sizing: border-box;
+  	box-sizing: border-box;
+  }
+  .sidebar {
+    margin: 0;
+    padding: 0;
+    width: 400px;
+
+    position: fixed;
+    height: 100%;
+    overflow: auto;
+    display: none;
+    top: 80px;
+    left: 1%;
+
+  }
+
+  .card_custom{
+
+    background: #e0e6e673;
+    margin: 10px;
+    padding: 10px;
+    position: relative;
+    z-index: 1;
+}
+  .pad2 {
+  	padding: 20px;
+  }
+  .map {
+  	position: absolute;
+  	top: 0;
+  	bottom: 0;
+  	/*height: 72%;*/
+  	width: 100%;
+  }
+  h1 {
+  	font-size: 22px;
+  	margin: 0;
+  	font-weight: 400;
+  }
+  a {
+  	color: #404040;
+  	text-decoration: none;
+  }
+  a:hover {
+  	color: #101010;
+  }
+  .heading {
+  	background: #ea9e25c7;
+  	border-bottom: 1px solid #ea9e25;
+  	min-height: 60px;
+  	line-height: 60px;
+  	padding: 0 10px;
+  	color: white;
+  	font-weight: 100;
+  	font-size: 17px!important;
+  }
+  .listings {
+
+    overflow: auto;
+        max-height: 146px;
+
+        background-color: #f5f7f7;
+        display: none;
+        border-bottom: 1px solid #eeeeee;
+    display: none;
+  }
+  .listings .item {
+    display: block;
+    border-bottom: 1px solid #eee;
+    padding-left: 18px;
+    text-decoration: none;
+    padding-top: 2px;
+    padding-bottom: 2px;
+  }
+  .listings .item:last-child {
+  	border-bottom: none;
+  }
+  #listing > div > i{
+
+        font-size: 7px;
+  }
+
+#listings > div{
+  font-size: 10px;
+color: #999fa0;
+}
+
+  .listings .item .title {
+    display: block;
+    color: #4a5e60;
+    font-weight: 100;
+    font-size: 14px;
+  }
+  .listings .item .title small {
+  	font-weight: 400;
+  }
+  .listings .item.active .title,
+  .listings .item .title:hover {
+  	color: #97bd3d;
+  }
+  .listings .item.active {
+  	background-color: #ffffff;
+  }
+  ::-webkit-scrollbar {
+  	width: 3px;
+  	height: 3px;
+  	border-left: 0;
+  	background: rgba(0, 0, 0, 0.1);
+  }
+  ::-webkit-scrollbar-track {
+  	background: none;
+  }
+  ::-webkit-scrollbar-thumb {
+  	background: #3e3e3e;
+  	border-radius: 0;
+  }
+  .boxdraw {
+  	background: rgba(56, 135, 190, 0.1);
+  	border: 2px solid #3887be;
+  	position: absolute;
+  	top: 0;
+  	left: 0;
+  	width: 0;
+  	height: 0;
+  }
+  .calculation-box {
+    background-color: #f5f7f7;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+    transition: all 0.3s cubic-bezier(.25,.8,.25,1);
+    display: none;
+  }
+  p {
+  	font-family: sans-serif;
+  	margin: 0;
+  	font-size: 12px;
+  	line-height: 26px;
+  }
+  #polygon_out_main > div > p {
+  	margin-left: 10px;
+  }
+  #polygon_out_main {
+  	color: #3bb2d0;
+  	padding: 10px;
+  }
+  .hide_text {
+  	color: #a8a8a8!important;
+  	background-color: #ffffff!important;
+  	font-size: 12px;
+  	line-height: 17px;
+  }
+#country_name_ > p > i{
+  float: right;
+margin-top: -6px;
+}
+#map > div.mapboxgl-control-container > div.mapboxgl-ctrl-top-right > div:nth-child(1){
+  display: none;
+}
+  #country_name {
+    z-index: 1!important;
+background-color: white;
+-webkit-box-shadow: 0 1px 3px 0 rgba(0, 0, 0, .25);
+box-shadow: 0 1px 3px 0 rgba(0, 0, 0, .25);
+  }
+  .section_out_title > p {
+    color: #6c757d;
+    font-weight: lighter;
+    font-size: 14px;
+  }
+
+  .section_out_number > p {
+    font-size: 20px;
+    color: #4a5e60;
+    margin-top: -18px;
+}
+
+  .btn-primary {
+
+  }
+
+ #country_budget > p {
+   font-size: 20px;
+   color: #7a9b2c;
+  }
+  #country_projects > p {
+    font-size: 20px;
+    color: #7a9b2c;
+   }
+  #country_projects_title > p {
+    color: #6c757d;
+    font-weight: lighter;
+    font-size: 14px;
+  }
+  #country_name_ {
+    padding: 20px;
+    color: #485354;
+    font-weight: 100;
+    background-color: #ffffff;
+    border-bottom: 1px solid #f1f4f4;
+  }
+  #country_name_ > p {
+  	font-size: 30px;
+  }
+  #map > div.mapboxgl-control-container > div.mapboxgl-ctrl-top-right > div:nth-child(1) {
+  	/*display: none;*/
+  }
+
+  a.mapboxgl-ctrl-logo {
+
+      DISPLAY: NONE!IMPORTANT;
+    }
+    .btn {
+        display: inline-block;
+        font-weight: 400;
+        color: #212529;
+        text-align: center;
+        vertical-align: middle;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+        background-color: transparent;
+        border: 1px solid transparent;
+        padding: .175rem .575rem;
+        font-size: 1rem;
+        line-height: 1.5;
+
+
+    }
+  #btn_maps {
+
+    padding: 20px;
+    background-color: #cad2d321;
+  }
+  .map-overlay {
+  	position: absolute;
+  	width: 100%;
+  	bottom: 0;
+  	left: 0;
+  	font: 12px/20px'Helvetica Neue', Arial, Helvetica, sans-serif;
+  	background-color: #353535c7;
+  	max-height: 250px;
+  	overflow: auto;
+  	z-index: 99999999!IMPORTANT;
+  }
+
+  .zoom_custom {
+    margin-left: 10%;
+  }
+  .draw_rec_custom{
+    margin-right: 10%;
+
+  }
+  .clean_custom {
+  	margin-left: 10%;
+  }
+  .reload_custom {
+    margin-left: 10%;
+  }
+  body > div.map-overlay > fieldset {
+  	border: none;
+  }
+  .map-overlay fieldset {
+  	display: none;
+  	background: #2929291c;
+  	border: none;
+  	padding: 10px;
+  	margin: 0;
+  }
+  .map-overlay input {
+  	display: block;
+  	border: none;
+  	width: 100%;
+  	border-radius: 3px;
+  	padding: 10px;
+  	margin: 0;
+  	background: #292929;
+  }
+  .map-overlay .listing {
+  	overflow: auto;
+  	max-height: 100%;
+  }
+  .map-overlay .listing > * {
+  	display: block;
+  	padding: 5px 10px;
+  	margin: 0;
+  }
+  .map-overlay .listing p {
+  	border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  	color: #bdbdbd;
+  	text-decoration: none;
+  }
+  .map-overlay .listing p:last-child {
+  	border: none;
+  }
+  .map-overlay .listing p:hover {
+  	background: #292929;
+  }
+  .heading > h1 {
+  	text-align: center;
+  	padding-top: 18px;
+  }
+
+  .geocoder {
+    position: absolute;
+        z-index: 1;
+        width: 400px;
+        /* left: 50%; */
+        margin-left: 1%;
+        top: 20px;
+        background: #ffffff;
+        padding: 8px;
+        transition: left 0.5s;
+        -webkit-transform: translateX(0px);
+        transform: translateX(0px);
+        transition-property: -webkit-transform,transform,visibility,opacity;
+        transition-duration: 200ms;
+        transition-timing-function: cubic-bezier(0.0,0.0,0.2,1);
+        box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0, 0, 0, 0);
+        transition: all 0.3s cubic-bezier(.25,.8,.25,1);
+}
+#listingname > span:nth-child(2){
+
+  margin-left: 10px
+
+}
+#listingname{
+  display: none;
+  background: #333b42;
+  padding: 10px;
+  color: #ffffff;
+  -moz-box-shadow: inset 0 0 10px #000000;
+  margin-top: 0px;
+  z-index: 0!important;
+  /* border-bottom: 1px solid #eeeeee; */
+  -webkit-box-shadow: 0 1px 3px 0 rgba(0, 0, 0, .25);
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, .25);
+  margin-top: 5px;
+  font-size: 18px;
+}
+.mapboxgl-ctrl-geocoder { min-width:100%; }
+</style>
+</head>
+<body>
+
+  <div id='map' class='map'> </div>
+  <div id='geocoder' class='geocoder'></div>
+  <div class='sidebar'>
+      <div id='country_name'>
+      </div>
+      <div id = 'listing'>
+      <div id = 'listingname'>
+        <span style=" display:inline;"><i class="fas fa-caret-down"></i></span>
+        <span style=" display:inline; ">  Sites Selected</span>
+      </div>
+     <div id='listings' class='listings'></div>
+     </div>
+     <div class='calculation-box'>
+        <p></p>
+        <div id='polygon_out_main'></div>
+     </div>
+  </div>
+  <div class='map-overlay'>
+     <fieldset>
+        <input id='feature-filter' type='text' placeholder='Filter results by name in the current view' />
+     </fieldset>
+     <div id='feature-listing' class='listing'></div>
+  </div>
+<script>
+mapboxgl.accessToken = 'pk.eyJ1IjoiZ2lzZGV2ZWxvcG1hcCIsImEiOiJjamZrdmp3bWYwY280MndteDg1dGlmdzF3In0.4m2zz_ISrUCXyz27MdL8_Q';
+
+var filterEl = document.getElementById('feature-filter');
+var listingEl = document.getElementById('feature-listing');
+
+function renderListings(features) {
+    // Clear any existing listings
+    listingEl.innerHTML = '';
+    if (features.length) {
+        features.forEach(function(feature) {
+            var prop = feature.properties;
+            var item = document.createElement('p');
+            var id_site_url  = prop.id_site;
+            item.textContent = prop.site_name;
+            item.addEventListener('click', function() {
+                // Highlight corresponding feature on the map
+                popup.setLngLat(feature.geometry.coordinates)
+                    .setHTML('<a href="http://econservation.jrc.ec.europa.eu/site/'+feature.properties.id_site+'">'+feature.properties.site_name+'</a>' )
+                    .addTo(map);
+            });
+            listingEl.appendChild(item);
+        });
+
+        // Show the filter input
+        filterEl.parentNode.style.display = 'block';
+    } else {
+        var empty = document.createElement('p');
+        empty.textContent = 'Drag the map to populate results';
+        listingEl.appendChild(empty);
+        // Hide the filter input
+        filterEl.parentNode.style.display = 'none';
+        // remove features filter
+        map.setFilter('site', ['has', 'id_site']);
+    }
+}
+
+function normalize(str) {
+    return str.trim().toLowerCase();
+}
+
+
+function getUniqueFeatures(array, comparatorProperty) {
+    var existingFeatureKeys = {};
+    // Because features come from tiled vector data, feature geometries may be split
+    // or duplicated across tile boundaries and, as a result, features may appear
+    // multiple times in query results.
+    var uniqueFeatures = array.filter(function(el) {
+        if (existingFeatureKeys[el.properties[comparatorProperty]]) {
+            return false;
+        } else {
+            existingFeatureKeys[el.properties[comparatorProperty]] = true;
+            return true;
+        }
+    });
+
+    return uniqueFeatures;
+}
+var zoomThreshold = 4;
+
+
+
+var map = new mapboxgl.Map({
+    container: 'map',
+    style: 'mapbox://styles/mapbox/light-v9',
+    center: [10, -33], // starting position[35.890, -75.664]
+    zoom: 3, // starting zoom
+    hash: true,
+    minZoom: 0,
+    maxZoom: 22,
+    preserveDrawingBuffer: true
+});
+
+var geocoder = new MapboxGeocoder({
+    accessToken: mapboxgl.accessToken
+});
+document.getElementById('geocoder').appendChild(geocoder.onAdd(map));
+
+//
+// map.on('click', 'mt_120_country_budget_project_geo', function (e) {
+//   var zoom = map.getZoom();
+// console.log(e);
+//         map.getCanvas().style.cursor = 'pointer';
+//         e.features.forEach(function(feature) {
+//           var bbox = turf.bbox(feature);
+//           console.log(bbox);
+//            map.fitBounds(bbox, {padding: 20});
+//         });
+//
+// });
+
+
+
+document.getElementById('geocoder').addEventListener('click', function () {
+
+  map.flyTo({
+      center: [25,27],
+      zoom:2
+  });
+
+});
+
+
+
+
+map.on('load', function() {
+
+  map.addSource('single-point', {
+          "type": "geojson",
+          "data": {
+              "type": "FeatureCollection",
+              "features": []
+          }
+      });
+      map.addLayer({
+             "id": "point",
+             "source": "single-point",
+             "type": "circle",
+             "paint": {
+                 "circle-radius": 0,
+                 "circle-color": "#007cbf"
+             }
+         });
+
+var miolayer = map.getLayer('point');
+
+
+        geocoder.on('result', function(ev) {
+          map.getSource('single-point').setData(ev.result.geometry);
+
+console.log(ev);
+          var latlon = ev.result.center;
+          console.info(latlon)
+          var lat = latlon[0]
+          var lon = latlon[1]
+          var pointsel = map.project(latlon)
+
+          var ll = new mapboxgl.LngLat(lat, lon);
+          console.warn(ll);
+
+    map.fire('click', { lngLat: ll, point:pointsel })
+
+
+
+        });
+
+
+
+  map.addLayer({
+      "id": "country-hig",
+      "type": "fill",
+      "source": {
+          "type": "vector",
+          "tiles": ["https://geospatial.jrc.ec.europa.eu/geoserver/gwc/service/wmts?layer=dopa_explorer_2:mt_120_country_budget_project_geo&tilematrixset=EPSG:900913&Service=WMTS&Request=GetTile&Version=1.0.0&Format=application/x-protobuf;type=mapbox-vector&TileMatrix=EPSG:900913:{z}&TileCol={x}&TileRow={y}"]
+          },
+      "source-layer": "mt_120_country_budget_project_geo",
+      'paint': {
+       'fill-color':'gray',
+
+                  'fill-opacity':0.4
+
+              },
+              "filter": ["in", "iso2", ""]
+  });
+
+
+  map.addLayer({
+      "id": "mt_120_country_budget_project_geo",
+      "type": "fill",
+      "source": {
+          "type": "vector",
+          "tiles": ["https://geospatial.jrc.ec.europa.eu/geoserver/gwc/service/wmts?layer=dopa_explorer_2:mt_120_country_budget_project_geo&tilematrixset=EPSG:900913&Service=WMTS&Request=GetTile&Version=1.0.0&Format=application/x-protobuf;type=mapbox-vector&TileMatrix=EPSG:900913:{z}&TileCol={x}&TileRow={y}"]
+          },
+      "source-layer": "mt_120_country_budget_project_geo",
+
+      'paint': {
+                  'fill-color': [
+                      'interpolate',
+                      ['linear'],
+                      ['get', 'sum_budget'],
+                      0, '#ffffff',
+                      200000, '#F9FAFA',
+                      500000, '#DBE0E1',
+                      750000, '#BFC8CA',
+                      1000000, '#ACB8B9',
+                      5000000, '#95A5A7',
+                      10000000, '#829497',
+                      50000000, '#687B7D',
+                      100000000, '#566567',
+                  ],
+                    'fill-outline-color': '#ffffff',
+
+              }
+  }, 'waterway-label');
+
+
+
+  map.addLayer({
+      "id": "wdpahighlighted",
+      "type": "circle",
+      "source": {
+          "type": "vector",
+          "tiles": ["https://geospatial.jrc.ec.europa.eu/geoserver/gwc/service/wmts?layer=dopa_explorer_2:site&tilematrixset=EPSG:900913&Service=WMTS&Request=GetTile&Version=1.0.0&Format=application/x-protobuf;type=mapbox-vector&TileMatrix=EPSG:900913:{z}&TileCol={x}&TileRow={y}"]
+          },
+      "source-layer": "site",
+      'paint': {
+      // make circles larger as the user zooms from z12 to z22
+      'circle-radius': {
+      'base': 4.75,
+      'stops': [[12, 11], [22, 180]]
+      },
+      'circle-color': "#333b42",
+      'circle-opacity': 1,
+      },
+      "filter": ["in", "country_iso2", ""]
+
+  }, 'waterway-label');
+
+  map.addLayer({
+      "id": "site",
+      "type": "circle",
+      "source": {
+          "type": "vector",
+          "tiles": ["https://geospatial.jrc.ec.europa.eu/geoserver/gwc/service/wmts?layer=dopa_explorer_2:site&tilematrixset=EPSG:900913&Service=WMTS&Request=GetTile&Version=1.0.0&Format=application/x-protobuf;type=mapbox-vector&TileMatrix=EPSG:900913:{z}&TileCol={x}&TileRow={y}"]
+          },
+      "source-layer": "site",
+      'paint': {
+        // make circles larger as the user zooms from z12 to z22
+        'circle-radius': {
+        'base': 3.75,
+        'stops': [[12, 4], [22, 180]]
+        },
+        'circle-color': [
+          'match',
+          ['get', 'precision_id'],
+          '1', '#97bd3d',
+          '2', '#97bd3d',
+          '3', '#97bd3d',
+          '4.1', '#97bd3d',
+          '4.2', '#97bd3d',
+          '5', '#97bd3d',
+          '6', '#97bd3d',
+          '8.1', '#97bd3d',
+          '8.3', '#97bd3d',
+          '10', '#97bd3d',
+          /* other */ '#97bd3d'
+      ],
+    //  'circle-opacity': 0.5
+    }
+  }, 'waterway-label');
+
+  map.addLayer({
+      "id": "sitehighlighted",
+      "type": "circle",
+      "source": {
+          "type": "vector",
+          "tiles": ["https://geospatial.jrc.ec.europa.eu/geoserver/gwc/service/wmts?layer=dopa_explorer_2:site&tilematrixset=EPSG:900913&Service=WMTS&Request=GetTile&Version=1.0.0&Format=application/x-protobuf;type=mapbox-vector&TileMatrix=EPSG:900913:{z}&TileCol={x}&TileRow={y}"]
+          },
+      "source-layer": "site",
+      'paint': {
+      // make circles larger as the user zooms from z12 to z22
+      'circle-radius': {
+      'base': 4.75,
+      'stops': [[12, 8], [22, 180]]
+      },
+      'circle-color': "#97bd3d",
+      'circle-opacity': 0.5,
+      },
+      "filter": ["in", "country_iso2", ""]
+
+  }, 'waterway-label');
+
+
+
+
+  map.setPaintProperty('mt_120_country_budget_project_geo', 'fill-opacity', [
+      "interpolate",
+      ["exponential", 0.9],
+      ["zoom"],2,1,6,0
+  ]);
+  map.setPaintProperty('site', 'circle-opacity', [
+      "interpolate",
+      ["exponential", 0.9],
+      ["zoom"],2,0,6,1
+  ]);
+  map.on('click', 'site', function(e) {
+      map.getCanvas().style.cursor = 'pointer';
+      var feature = e.features[0];
+      var zoom = map.getZoom();
+      if (zoom > 3){
+      popup.setLngLat(feature.geometry.coordinates)
+          .setText(feature.properties.site_name + ' (' + feature.properties.id_site + ')')
+          .addTo(map);
+        }
+  });
+  map.on('click', 'mt_120_country_budget_project_geo', function(e) {
+
+
+              map.addLayer({
+                  "id": "protected_areas",
+                  "type": "fill",
+                  "source": {
+                      "type": "vector",
+                      "tiles": ["https://geospatial.jrc.ec.europa.eu/geoserver/gwc/service/wmts?layer=dopa_explorer_2:mt_160_wdpa_budget_project_geo_poly&tilematrixset=EPSG:900913&Service=WMTS&Request=GetTile&Version=1.0.0&Format=application/x-protobuf;type=mapbox-vector&TileMatrix=EPSG:900913:{z}&TileCol={x}&TileRow={y}"]
+                      },
+                  "source-layer": "mt_160_wdpa_budget_project_geo_poly",
+                  'paint': {
+                   'fill-color':'#d4ee96',
+
+                              'fill-opacity':0.5,
+
+                          },
+                        //  "filter": ["in", "wdpaid", ""]
+              }, 'wdpahighlighted');
+
+      if (e.features.length > 0) {
+      var feature = e.features[0];
+      var country_id = feature.properties.iso2;
+      var budget =   Math.round(feature.properties.sum_budget*1)/1;
+      map.setFilter('sitehighlighted', ['==', 'country_iso2', country_id ]);
+      $('#country_name').empty().append("<div id='country_name_'> <p> "+feature.properties.country_name+" <i class='fas fa-map-marked'></i></p></div><div id = 'budget_main' class = 'card_custom'><div id='country_budget_title' class = 'section_out_title'> <p>Funding in Country</p> </div><br><div id='country_budget' class = 'section_out_number'> <p> "+
+      budget.toLocaleString()+" $ </p> </div></div><div id = 'project_number_main' class = 'card_custom'><div id='country_projects_title'> <p>Projects</p> </div><div id='country_projects'> <p> "+feature.properties.project_numb+" </p> </div></div>"+
+      "<div id = 'btn_maps'><div id = 'btn_maps'><button type='button' class='btn btn-primary draw_rec_custom'><i class='far fa-square'></i></button><button type='button' class='btn btn-primary draw_custom'><i class='fas fa-draw-polygon'></i></button><button type='button' class='btn btn-secondary clean_custom'><i class='fas fa-trash-alt'></i></button><button type='button' class='btn btn-secondary zoom_custom'><i class='fas fa-globe'></i></button><button  onClick='window.location.reload()' type='button' class='btn btn-secondary reload_custom'><i class='fas fa-sync-alt'></i></button></div>");
+
+      if($('.sidebar').css('display') == 'none')
+      {
+      $('.sidebar').animate({height:'toggle'},350);
+    }else{
+      $('.sidebar').show();
+    }
+
+      //  var coordinates = feature.geometry.coordinates;
+      var cfeatures = map.queryRenderedFeatures(e.point, { layers: ['mt_120_country_budget_project_geo'] });
+      var filter = cfeatures.reduce(function(memo, feature) {
+             memo.push(feature.properties.iso2);
+             return memo;
+             var bounds = new mapboxgl.LngLatBounds();
+             bounds.extend(feature.geometry.coordinates);
+             map.fitBounds(bounds);
+         }, ['!in', 'iso2']);
+         map.setFilter("country-hig", filter);
+    }
+
+    $('.draw_custom').click(function(){
+      $('.mapbox-gl-draw_trash').click();
+        $('.mapbox-gl-draw_polygon').click();
+
+    });
+    $('.draw_rec_custom').click(function(){
+      $('.mapbox-gl-draw_trash').click();
+      $('.mapbox-gl-draw_polygon').click();
+      setTimeout(function(){
+        draw.changeMode('draw_rectangle');
+
+        }, 300);
+    });
+    $('.clean_custom').click(function(){
+        $('.mapbox-gl-draw_trash').click();
+        map.setFilter('wdpahighlighted', ['==', 'country_iso2', "" ]);
+        $('.listings').hide();
+        $('#listingname').hide()
+    });
+    $( ".zoom_custom" ).click(function() {
+
+      map.flyTo({
+          center: [25,27],
+          zoom:2
+      });
+
+    });
+  });
+
+});
+
+
+
+//-----------------------------------------------------------   DRAW -------------------------------------------
+var modes = MapboxDraw.modes;
+modes.draw_rectangle = DrawRectangle.default;
+var draw = new MapboxDraw({
+modes: modes,
+displayControlsDefault: false,
+controls: {
+    polygon: true,
+    trash: true
+}
+});
+map.addControl(draw);
+map.on('draw.create', updateArea);
+map.on('draw.delete', updateArea);
+map.on('draw.update', updateArea);
+
+//-----------------------------------------------------------   CALCULATE AREA DROWN FEATURE -------------------------------------------
+
+var DrewAreaArray = []
+function updateArea(e) {
+  DrewAreaArray=[]
+    var data = draw.getAll();
+    var last_element = data.features[data.features.length-1]
+    if (data.features.length > 0) {
+        var area = turf.area(last_element);
+        var rounded_area = Math.round(area*100)/100;
+        var km_area = rounded_area/1000000
+        DrewAreaArray.push(km_area);
+    } else {
+        if (e.type !== 'draw.delete') alert("Use the draw tools to draw a polygon!");
+    }
+}
+
+// $('.mapbox-gl-draw_polygon').click(function()
+// {
+//   draw.changeMode('draw_rectangle');
+// })
+//-----------------------------------------------------------   DRAW -------------------------------------------
+map.on('draw.create', function(e){
+
+    var userPolygon = e.features[0];
+    // generate bounding box from polygon the user drew
+    var polygonBoundingBox = turf.bbox(userPolygon);
+    var southWest = [polygonBoundingBox[0], polygonBoundingBox[1]];
+    var northEast = [polygonBoundingBox[2], polygonBoundingBox[3]];
+    var northEastPointPixel = map.project(northEast);
+    var southWestPointPixel = map.project(southWest);
+    var features = map.queryRenderedFeatures([southWestPointPixel, northEastPointPixel], { layers: ['site'] });
+
+    // filter for highlight feature ------------------------------------------------------------------------------------------
+    var filter_wdpa = features.reduce(function(memo, feature) {
+      var inside=turf.pointsWithinPolygon(feature, userPolygon)
+        if (! (undefined === inside)) {
+          if (inside.features.length>0)
+          memo.push(feature.properties.id_site);
+        }
+        return memo;
+    }, ['in', 'id_site']);
+
+    map.setFilter("wdpahighlighted", filter_wdpa);
+
+   // calculate budget ------------------------------------------------------------------------------------------
+    var budget = features.reduce(function(print_budget, feature) {
+      var inside=turf.pointsWithinPolygon(feature, userPolygon)
+        if (! (undefined === inside)) {
+          // when u have budget just change site_id
+          if (inside.features.length>0){
+          print_budget.push(feature.properties.id_site);
+          }
+        }
+          return print_budget;
+    }, []);
+
+    var BudgetTotal = 0;
+    for(var i = 0, len = budget.length; i < len; i++) {
+        BudgetTotal += budget[i];
+
+    }
+
+    // filter for listing features ------------------------------------------------------------------------------------------
+    var number_of_points = features.reduce(function(print_number_of_points, feature) {
+    var inside=turf.pointsWithinPolygon(feature, userPolygon)
+
+        if (! (undefined === inside)) {
+
+          if (inside.features.length>0){
+              print_number_of_points.push(feature.properties.count);
+
+          var prop = feature.properties;
+          var site_id = feature.properties.id_site;
+          var listings = document.getElementById('listings');
+          var listing = listings.appendChild(document.createElement('div'));
+          listing.className = 'item';
+          listing.id = "listing-" + site_id;
+
+          var link = listing.appendChild(document.createElement('a'));
+          link.href = '#';
+          link.className = 'title';
+          link.dataPosition = site_id;
+          link.innerHTML = prop.site_name;
+
+          var details = listing.appendChild(document.createElement('div'));
+            details.innerHTML += ' <i class="fas fa-search"></i> ' + prop.precision;
+
+          function flyToStore(currentFeature) {
+
+            map.flyTo({
+              center: currentFeature.geometry.coordinates,
+              zoom: 10
+            });
+          }
+
+          function createPopUp(currentFeature) {
+            var popUps = document.getElementsByClassName('mapboxgl-popup');
+            // Check if there is already a popup on the map and if so, remove it
+            if (popUps[0]) popUps[0].remove();
+
+            var popup = new mapboxgl.Popup({ closeOnClick: false })
+              .setLngLat(currentFeature.geometry.coordinates)
+              .setHTML('<h6>'+ currentFeature.properties.site_name + '</h6>')
+              .addTo(map);
+          }
+
+          // Add an event listener for the links in the sidebar listing
+          link.addEventListener('click', function(e) {
+            console.info($(e.target).parent().attr('id').split('listing-')[1])
+            var id=$(e.target).parent().attr('id').split('listing-')[1]
+            // Update the currentFeature to the store associated with the clicked link
+          //  var clickedListing = features[this.dataPosition];
+            for (var p in features)
+
+            {
+                //console.log(features[p]);
+              if (features[p].properties.id_site==id)
+              {
+                //alert(id)
+
+                // 1. Fly to the point associated with the clicked link
+                  flyToStore(features[p]);
+                // 2. Close all other popups and display popup for clicked store
+                  createPopUp(features[p]);
+              }
+            }
+
+            // 3. Highlight listing in sidebar (and remove highlight for all other listings)
+            var activeItem = document.getElementsByClassName('active');
+            if (activeItem[0]) {
+              activeItem[0].classList.remove('active');
+            }
+            this.parentNode.classList.add('active');
+          });
+        }
+        }
+            return print_number_of_points;
+    }, []);
+
+    var NumberTotal = 0;
+    for(var i = 0, len = number_of_points.length; i < len; i++) {
+        NumberTotal += number_of_points[i];
+
+    }
+var averageBudget = Math.round((BudgetTotal/NumberTotal)*100)/100
+
+$('#polygon_out_main').append('<div id = "budget_main_tot" class = "card_custom"><div id="tot_budget_title" class = "section_out_title"> <p>Total funding for the selected polygon</p> </div><br><div id="tot_budget" class = "section_out_number"> <p>'+BudgetTotal.toLocaleString()+' $ </p></div></div>')
+$('#polygon_out_main').append('<div id = "budget_main_avg" class = "card_custom"><div id="avg_budget_title" class = "section_out_title"> <p>Average site funding for the selected polygon</p> </div><br><div id="avg_budget" class = "section_out_number"> <p>'+averageBudget.toLocaleString()+' $ </p></div></div>')
+$('#polygon_out_main').append('<div id = "site_number_main" class = "card_custom"><div id="site_number_title" class = "section_out_title"> <p>Number of sites for the selected polygon</p> </div><br><div id="site_number" class = "section_out_number"> <p>'+NumberTotal.toLocaleString()+' </p></div></div>')
+$('#polygon_out_main').append('<div id = "area_polygon_main" class = "card_custom"><div id="area_polygon_title" class = "section_out_title"> <p>Area of the selected polygon</p> </div><br><div id="area_polygon" class = "section_out_number"> <p>'+(Math.round(DrewAreaArray[0]*100)/100).toLocaleString()+' km<sup>2</sup> </p></div></div>')
+
+$('.listings').animate({height:'show'},350);
+$('#listingname').animate({height:'show'},350);
+$('.calculation-box').show();
+
+});
+
+
+
+
+
+$('.mapbox-gl-draw_polygon').click(function() {
+$( "#polygon_out_main > div > p" ).empty();
+ $("#listings").empty();
+ $( "#polygon_out_main > div > p" ).empty();
+});
+$('.mapbox-gl-draw_trash').click(function() {
+$('#polygon_out_main > div').children("p").remove();
+ $("#listings").empty();
+
+  $("#polygon_out_main").empty();
+
+});
+
+
+
+// Create a popup, but don't add it to the map yet.
+var popup = new mapboxgl.Popup({
+    closeButton: true,
+    closeOnClick: true
+});
+
+
+
+
+// Change it back to a pointer when it leaves.
+// map.on('mouseleave', 'site', function () {
+//     map.getCanvas().style.cursor = '';
+//      popup.remove();
+// });
+
+
+
+
+map.addControl(new mapboxgl.NavigationControl());
+
+var wdpa = simple.layers[1]
+
+function YearClasses () {
+  map.setPaintProperty('site', 'circle-color', [
+    'interpolate',
+     ['linear'],
+     ['get', 'precision_id'],
+     0, '#F2F12D',
+     1, '#EED322',
+     2, '#E6B71E',
+     3, '#DA9C20',
+     4, '#CA8323',
+     5, '#B86B25',
+     6, '#A25626',
+     7, '#8B4225',
+     8, '#723122'
+  ]);
+};
+function AreaClasses () {
+  map.setPaintProperty('site', 'circle-color', [
+    'interpolate',
+     ['linear'],
+     ['get', 'precision_id'],
+     0, '#F2F12D',
+     1, '#EED322',
+     2, '#E6B71E',
+     3, '#DA9C20',
+     4, '#CA8323',
+     5, '#B86B25',
+     6, '#A25626',
+     7, '#8B4225',
+     8, '#723122'
+  ]);
+};
+function MarineClasses () {
+  map.setPaintProperty('site', 'circle-color', [
+    'match',
+     ['get', 'precision'],
+     "5. Estimated coordinates", 'green',
+     "6. Country level", 'red',
+     'black',
+  ]);
+};
+
+
+
+</script>
+
+</body>
+</html>
